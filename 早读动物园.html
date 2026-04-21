@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>早读动物园</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #87CEEB 0%, #E0F7FA 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 40px);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-family: 楷体, KaiTi, serif;
+      font-size: 32px;
+      font-weight: bold;
+      color: #2C3E50;
+      text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
+    }
+
+    header p {
+      color: #5D6D7E;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .display-area {
+      flex: 1;
+      background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 70%, #90EE90 85%, #7CCD7C 100%);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1), inset 0 0 60px rgba(255,255,255,0.3);
+      position: relative;
+      overflow: hidden;
+      min-height: 350px;
+    }
+
+    .animal {
+      position: absolute;
+      animation: fadeIn 0.5s ease-out forwards;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .control-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      padding: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .card-title {
+      font-size: 12px;
+      color: #7F8C8D;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .db-display {
+      font-size: 36px;
+      font-weight: bold;
+      color: #2C3E50;
+      text-align: center;
+    }
+
+    .db-display span {
+      font-size: 16px;
+      color: #7F8C8D;
+    }
+
+    .slider-group {
+      margin-top: 10px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #7F8C8D;
+      margin-bottom: 5px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #E0E0E0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #4A90D9;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(74,144,217,0.4);
+    }
+
+    .timer-display {
+      font-size: 42px;
+      font-weight: bold;
+      color: #2C3E50;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #4A90D9;
+      color: white;
+      box-shadow: 0 4px 12px rgba(74,144,217,0.4);
+    }
+
+    .btn-primary:hover {
+      background: #3A7BC8;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #E74C3C;
+      color: white;
+      box-shadow: 0 4px 12px rgba(231,76,60,0.4);
+    }
+
+    .btn-danger:hover {
+      background: #C0392B;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: #95A5A6;
+      color: white;
+      box-shadow: 0 4px 12px rgba(149,165,166,0.4);
+    }
+
+    .btn-secondary:hover {
+      background: #7F8C8D;
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background: #27AE60;
+      color: white;
+      box-shadow: 0 4px 12px rgba(39,174,96,0.4);
+    }
+
+    .btn-success:hover {
+      background: #219A52;
+      transform: translateY(-2px);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+      color: #2C3E50;
+    }
+
+    .close-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #E0E0E0;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-btn:hover {
+      background: #C0392B;
+      color: white;
+    }
+
+    .setting-item {
+      margin-bottom: 20px;
+    }
+
+    .setting-label {
+      font-size: 14px;
+      color: #2C3E50;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .animal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .animal-option {
+      width: 40px;
+      height: 40px;
+      border: 2px solid #E0E0E0;
+      border-radius: 8px;
+      background: white;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .animal-option.selected {
+      border-color: #4A90D9;
+      background: #EBF5FB;
+    }
+
+    .animal-option:hover {
+      transform: scale(1.1);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .btn-row .btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .permission-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 20px;
+      z-index: 10;
+    }
+
+    .permission-overlay.hidden {
+      display: none;
+    }
+
+    .permission-text {
+      color: white;
+      font-size: 16px;
+      margin-bottom: 15px;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #E74C3C;
+      margin-bottom: 10px;
+    }
+
+    .status-indicator.active {
+      background: #27AE60;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>早读动物园</h1>
+      <p>一起大声朗读吧！</p>
+    </header>
+
+    <div class="display-area" id="displayArea">
+      <div class="permission-overlay" id="permissionOverlay">
+        <div class="status-indicator" id="statusIndicator"></div>
+        <p class="permission-text" id="permissionText">正在请求麦克风权限...</p>
+        <button class="btn btn-primary" id="requestPermissionBtn" style="display:none;">授权麦克风</button>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="card">
+        <div class="card-title">当前分贝</div>
+        <div class="db-display"><span id="dbValue">0</span> <span>dB</span></div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>阈值调节</span>
+            <span id="thresholdValue">60 dB</span>
+          </div>
+          <input type="range" id="thresholdSlider" min="30" max="100" value="60">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">朗读计时</div>
+        <div class="timer-display" id="timerDisplay">00:00</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">控制</div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="startBtn">开始</button>
+          <button class="btn btn-secondary" id="settingBtn">设置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="settingModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>设置</h2>
+        <button class="close-btn" id="closeModal">&times;</button>
+      </div>
+
+      <div class="setting-item">
+        <div class="slider-label">
+          <span>动物生成速度</span>
+          <span id="speedValue">5 秒</span>
+        </div>
+        <input type="range" id="speedSlider" min="1" max="60" value="5">
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-label">选择动物</div>
+        <div class="btn-row">
+          <button class="btn btn-success" id="selectAllBtn">全选</button>
+          <button class="btn btn-secondary" id="selectNoneBtn">全不选</button>
+        </div>
+        <div class="animal-grid" id="animalGrid"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="saveBtn">保存</button>
+        <button class="btn btn-secondary" id="resetBtn">重置</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ALL_ANIMALS = ['🐶', '🐱', '🐰', '🐻', '🐨', '🦊', '🦁', '🐐', '🐷', '🐸', '🐔', '🐧', '🦆', '🐸', '🦋', '🐵', '🦉', '🦈', '🐬', '🦄', '🐝'];
+
+    const DEFAULT_SETTINGS = {
+      threshold: 60,
+      speed: 5,
+      animals: [...ALL_ANIMALS]
+    };
+
+    let settings = { ...DEFAULT_SETTINGS };
+    let audioContext = null;
+    let analyser = null;
+    let microphone = null;
+    let isRunning = false;
+    let timerInterval = null;
+    let animalInterval = null;
+    let elapsedSeconds = 0;
+    let animalCount = 0;
+    const MAX_ANIMALS = 50;
+
+    const displayArea = document.getElementById('displayArea');
+    const dbValue = document.getElementById('dbValue');
+    const thresholdSlider = document.getElementById('thresholdSlider');
+    const thresholdValue = document.getElementById('thresholdValue');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const settingBtn = document.getElementById('settingBtn');
+    const settingModal = document.getElementById('settingModal');
+    const closeModal = document.getElementById('closeModal');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    const animalGrid = document.getElementById('animalGrid');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const selectNoneBtn = document.getElementById('selectNoneBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const permissionOverlay = document.getElementById('permissionOverlay');
+    const permissionText = document.getElementById('permissionText');
+    const requestPermissionBtn = document.getElementById('requestPermissionBtn');
+    const statusIndicator = document.getElementById('statusIndicator');
+
+    function loadSettings() {
+      const saved = localStorage.getItem('morningZooSettings');
+      if (saved) {
+        try {
+          settings = JSON.parse(saved);
+        } catch (e) {
+          settings = { ...DEFAULT_SETTINGS };
+        }
+      }
+      thresholdSlider.value = settings.threshold;
+      thresholdValue.textContent = settings.threshold + ' dB';
+      speedSlider.value = settings.speed;
+      speedValue.textContent = settings.speed + ' 秒';
+      updateAnimalGrid();
+    }
+
+    function saveSettings() {
+      localStorage.setItem('morningZooSettings', JSON.stringify(settings));
+    }
+
+    function updateAnimalGrid() {
+      animalGrid.innerHTML = '';
+      ALL_ANIMALS.forEach(animal => {
+        const btn = document.createElement('button');
+        btn.className = 'animal-option' + (settings.animals.includes(animal) ? ' selected' : '');
+        btn.textContent = animal;
+        btn.addEventListener('click', () => {
+          btn.classList.toggle('selected');
+        });
+        animalGrid.appendChild(btn);
+      });
+    }
+
+    function getSelectedAnimals() {
+      const selected = [];
+      animalGrid.querySelectorAll('.animal-option.selected').forEach(btn => {
+        selected.push(btn.textContent);
+      });
+      return selected;
+    }
+
+    async function initAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        microphone = audioContext.createMediaStreamSource(stream);
+        microphone.connect(analyser);
+        analyser.fftSize = 256;
+        permissionOverlay.classList.add('hidden');
+        statusIndicator.classList.add('active');
+        permissionText.textContent = '麦克风已连接';
+        return true;
+      } catch (err) {
+        console.error('Microphone access denied:', err);
+        permissionText.textContent = '无法访问麦克风，请检查浏览器设置';
+        requestPermissionBtn.style.display = 'block';
+        return false;
+      }
+    }
+
+    function getVolume() {
+      if (!analyser) return 0;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / dataArray.length;
+      const db = Math.round(20 * Math.log10(average / 128) + 60);
+      return Math.max(0, Math.min(120, db));
+    }
+
+    function spawnAnimal() {
+      if (animalCount >= MAX_ANIMALS) {
+        const oldest = displayArea.querySelector('.animal');
+        if (oldest) oldest.remove();
+        animalCount--;
+      }
+
+      const selectedAnimals = getSelectedAnimals();
+      if (selectedAnimals.length === 0) return;
+
+      const animal = document.createElement('div');
+      animal.className = 'animal';
+      animal.textContent = selectedAnimals[Math.floor(Math.random() * selectedAnimals.length)];
+
+      const size = Math.random() * 30 + 30;
+      animal.style.fontSize = size + 'px';
+
+      const areaRect = displayArea.getBoundingClientRect();
+      const maxX = areaRect.width - size - 20;
+      const maxY = areaRect.height * 0.7;
+      const x = Math.random() * maxX + 10;
+      const y = Math.random() * maxY + 10;
+
+      animal.style.left = x + 'px';
+      animal.style.top = y + 'px';
+
+      displayArea.appendChild(animal);
+      animalCount++;
+    }
+
+    function updateTimer() {
+      elapsedSeconds++;
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+      timerDisplay.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }
+
+    function start() {
+      if (!audioContext) {
+        initAudio().then(ready => {
+          if (ready) start();
+        });
+        return;
+      }
+
+      isRunning = true;
+      startBtn.textContent = '暂停';
+      startBtn.classList.remove('btn-primary');
+      startBtn.classList.add('btn-danger');
+
+      timerInterval = setInterval(updateTimer, 1000);
+
+      let lastSpawnTime = Date.now();
+      function checkVolume() {
+        if (!isRunning) return;
+
+        const db = getVolume();
+        dbValue.textContent = db;
+
+        const threshold = parseInt(thresholdSlider.value);
+        const speed = parseInt(speedSlider.value) * 1000;
+
+        if (db > threshold && Date.now() - lastSpawnTime >= speed) {
+          spawnAnimal();
+          lastSpawnTime = Date.now();
+        }
+
+        requestAnimationFrame(checkVolume);
+      }
+      checkVolume();
+    }
+
+    function pause() {
+      isRunning = false;
+      startBtn.textContent = '开始';
+      startBtn.classList.remove('btn-danger');
+      startBtn.classList.add('btn-primary');
+      clearInterval(timerInterval);
+      dbValue.textContent = '0';
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (isRunning) {
+        pause();
+      } else {
+        start();
+      }
+    });
+
+    thresholdSlider.addEventListener('input', () => {
+      thresholdValue.textContent = thresholdSlider.value + ' dB';
+      settings.threshold = parseInt(thresholdSlider.value);
+    });
+
+    speedSlider.addEventListener('input', () => {
+      speedValue.textContent = speedSlider.value + ' 秒';
+      settings.speed = parseInt(speedSlider.value);
+    });
+
+    settingBtn.addEventListener('click', () => {
+      settingModal.classList.add('active');
+    });
+
+    closeModal.addEventListener('click', () => {
+      settingModal.classList.remove('active');
+    });
+
+    settingModal.addEventListener('click', (e) => {
+      if (e.target === settingModal) {
+        settingModal.classList.remove('active');
+      }
+    });
+
+    selectAllBtn.addEventListener('click', () => {
+      animalGrid.querySelectorAll('.animal-option').forEach(btn => btn.classList.add('selected'));
+    });
+
+    selectNoneBtn.addEventListener('click', () => {
+      animalGrid.querySelectorAll('.animal-option').forEach(btn => btn.classList.remove('selected'));
+    });
+
+    saveBtn.addEventListener('click', () => {
+      settings.animals = getSelectedAnimals();
+      settings.threshold = parseInt(thresholdSlider.value);
+      settings.speed = parseInt(speedSlider.value);
+      saveSettings();
+      settingModal.classList.remove('active');
+    });
+
+    resetBtn.addEventListener('click', () => {
+      settings = { ...DEFAULT_SETTINGS };
+      thresholdSlider.value = settings.threshold;
+      thresholdValue.textContent = settings.threshold + ' dB';
+      speedSlider.value = settings.speed;
+      speedValue.textContent = settings.speed + ' 秒';
+      updateAnimalGrid();
+    });
+
+    requestPermissionBtn.addEventListener('click', () => {
+      initAudio();
+    });
+
+    loadSettings();
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      initAudio();
+    } else {
+      permissionText.textContent = '您的浏览器不支持麦克风访问';
+      requestPermissionBtn.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

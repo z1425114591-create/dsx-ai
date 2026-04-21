@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude /plugin marketplace add https://gitee.com/iamzhihuix/claude-skills-mirror.git)",
+      "Bash(unset CLAUDECODE)",
+      "Bash(claude /plugin)",
+      "Bash(curl -sI \"https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap\")",
+      "Read(//Users/a58/claude/**)",
+      "Read(//Users/a58/.claude/**)",
+      "Bash(gh api:*)"
+    ]
+  }
+}

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f1a;
+      font-family: 'Press+Start+2P', monospace;
+    }
+
+    h1 {
+      color: #00ff88;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 20px #00ff8866;
+      letter-spacing: 8px;
+    }
+
+    .game-info {
+      display: flex;
+      justify-content: space-between;
+      width: 400px;
+      margin-bottom: 0.5rem;
+      color: #fff;
+      font-size: 0.7rem;
+    }
+
+    .score { color: #00ff88; }
+    .high-score { color: #ffd700; }
+    .speed-info { color: #ff6b6b; }
+
+    canvas {
+      border: 4px solid #00ff88;
+      border-radius: 4px;
+      box-shadow: 0 0 30px #00ff8844;
+    }
+
+    .controls {
+      margin-top: 1rem;
+      color: #666;
+      font-size: 0.5rem;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .controls span {
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>SNAKE</h1>
+  <div class="game-info">
+    <span class="score">SCORE: <span id="score">0</span></span>
+    <span class="speed-info">SPEED: <span id="speed">1</span></span>
+    <span class="high-score">BEST: <span id="highScore">0</span></span>
+  </div>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <div class="controls">
+    <span>ARROW KEYS</span> or <span>WASD</span> to move<br>
+    <span>SPACE</span> to start / restart
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const GRID_SIZE = 20;
+    const CELL_COUNT = canvas.width / GRID_SIZE;
+    const INITIAL_SPEED = 150;
+    const MIN_SPEED = 50;
+    const SPEED_DECREASE = 5;
+
+    let snake = [];
+    let direction = { x: 1, y: 0 };
+    let nextDirection = { x: 1, y: 0 };
+    let food = { x: 0, y: 0 };
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('snakeHighScore')) || 0;
+    let speed = INITIAL_SPEED;
+    let level = 1;
+    let gameState = 'start'; // start, playing, gameover
+    let gameLoop = null;
+
+    document.getElementById('highScore').textContent = highScore;
+
+    function initGame() {
+      snake = [
+        { x: 5, y: 10 },
+        { x: 4, y: 10 },
+        { x: 3, y: 10 }
+      ];
+      direction = { x: 1, y: 0 };
+      nextDirection = { x: 1, y: 0 };
+      score = 0;
+      speed = INITIAL_SPEED;
+      level = 1;
+      document.getElementById('score').textContent = score;
+      document.getElementById('speed').textContent = level;
+      spawnFood();
+    }
+
+    function spawnFood() {
+      let valid = false;
+      while (!valid) {
+        food.x = Math.floor(Math.random() * CELL_COUNT);
+        food.y = Math.floor(Math.random() * CELL_COUNT);
+        valid = !snake.some(seg => seg.x === food.x && seg.y === food.y);
+      }
+    }
+
+    function drawRect(x, y, color, radius = 0) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x * GRID_SIZE + 1, y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2, radius);
+      ctx.fill();
+    }
+
+    function drawCircle(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(
+        x * GRID_SIZE + GRID_SIZE / 2,
+        y * GRID_SIZE + GRID_SIZE / 2,
+        GRID_SIZE / 2 - 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+
+    function draw() {
+      // Background
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Grid (subtle)
+      ctx.strokeStyle = '#252540';
+      for (let i = 0; i <= CELL_COUNT; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * GRID_SIZE, 0);
+        ctx.lineTo(i * GRID_SIZE, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * GRID_SIZE);
+        ctx.lineTo(canvas.width, i * GRID_SIZE);
+        ctx.stroke();
+      }
+
+      // Food
+      drawCircle(food.x, food.y, '#ff6b6b');
+
+      // Snake body
+      snake.forEach((seg, i) => {
+        const isHead = i === 0;
+        drawRect(seg.x, seg.y, isHead ? '#00cc66' : '#00ff88', 4);
+      });
+    }
+
+    function update() {
+      direction = { ...nextDirection };
+
+      const head = {
+        x: snake[0].x + direction.x,
+        y: snake[0].y + direction.y
+      };
+
+      // Wrap around
+      if (head.x < 0) head.x = CELL_COUNT - 1;
+      if (head.x >= CELL_COUNT) head.x = 0;
+      if (head.y < 0) head.y = CELL_COUNT - 1;
+      if (head.y >= CELL_COUNT) head.y = 0;
+
+      // Self collision check
+      if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+        gameOver();
+        return;
+      }
+
+      snake.unshift(head);
+
+      // Eat food
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        document.getElementById('score').textContent = score;
+
+        // Increase speed
+        if (speed > MIN_SPEED) {
+          speed -= SPEED_DECREASE;
+          level++;
+          document.getElementById('speed').textContent = level;
+        }
+
+        spawnFood();
+      } else {
+        snake.pop();
+      }
+    }
+
+    function gameOver() {
+      gameState = 'gameover';
+      clearInterval(gameLoop);
+
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('snakeHighScore', highScore);
+        document.getElementById('highScore').textContent = highScore;
+      }
+    }
+
+    function drawOverlay(text, subtext) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#fff';
+      ctx.font = '20px "Press Start 2P"';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2 - 20);
+
+      ctx.fillStyle = '#888';
+      ctx.font = '10px "Press Start 2P"';
+      ctx.fillText(subtext, canvas.width / 2, canvas.height / 2 + 20);
+    }
+
+    function gameStep() {
+      update();
+      draw();
+
+      if (gameState === 'gameover') {
+        drawOverlay('GAME OVER', `SCORE: ${score}  |  PRESS SPACE`);
+      }
+    }
+
+    function startGame() {
+      if (gameState === 'start' || gameState === 'gameover') {
+        initGame();
+        gameState = 'playing';
+        clearInterval(gameLoop);
+        gameLoop = setInterval(gameStep, speed);
+        draw();
+      }
+    }
+
+    function handleKeyDown(e) {
+      const key = e.key.toLowerCase();
+
+      if (key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        startGame();
+        return;
+      }
+
+      if (gameState !== 'playing') return;
+
+      switch (key) {
+        case 'arrowup':
+        case 'w':
+          if (direction.y !== 1) nextDirection = { x: 0, y: -1 };
+          break;
+        case 'arrowdown':
+        case 's':
+          if (direction.y !== -1) nextDirection = { x: 0, y: 1 };
+          break;
+        case 'arrowleft':
+        case 'a':
+          if (direction.x !== 1) nextDirection = { x: -1, y: 0 };
+          break;
+        case 'arrowright':
+        case 'd':
+          if (direction.x !== -1) nextDirection = { x: 1, y: 0 };
+          break;
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Initial draw
+    initGame();
+    draw();
+    drawOverlay('SNAKE', 'PRESS SPACE TO START');
+  </script>
+</body>
+</html>
