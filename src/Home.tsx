@@ -364,7 +364,7 @@ function TopNav({
   return (
     <div className="h-11 px-4 bg-white border-b border-gray-100 flex items-center justify-between relative z-[50]">
       <div className="flex items-center gap-0.5">
-        <img src="/logo.png" alt="大师兄AI" className="h-7" />
+        <img src="./logo.png" alt="大师兄AI" className="h-7" />
       </div>
       <div className="flex items-center gap-3">
         <div className="relative">
@@ -1668,7 +1668,7 @@ export default function Home() {
             {/* Chat Area */}
             <div
               className="flex-1 overflow-y-auto px-3 pt-2"
-              style={{ paddingTop: 44, backgroundImage: 'url(/chat-bg.png)', backgroundSize: 'cover' }}
+              style={{ paddingTop: 44, backgroundImage: 'url(./chat-bg.png)', backgroundSize: 'cover' }}
             >
               {messages.map((msg) => (
                 <div key={msg.id}>
